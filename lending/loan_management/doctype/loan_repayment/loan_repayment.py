@@ -104,6 +104,7 @@ class LoanRepayment(AccountsController):
 					enqueue_after_commit=True,
 				)
 			return
+
 		reversed_accruals = []
 		make_sales_invoice_for_charge(
 			self.against_loan,
@@ -651,7 +652,7 @@ class LoanRepayment(AccountsController):
 
 	def check_future_entries(self):
 		filters = {
-			"posting_date": (">=", self.posting_date),
+			"posting_date": (">", self.posting_date),
 			"docstatus": 1,
 			"against_loan": self.against_loan,
 		}
