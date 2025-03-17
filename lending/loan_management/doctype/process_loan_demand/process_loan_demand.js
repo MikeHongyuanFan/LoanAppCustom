@@ -45,4 +45,13 @@ frappe.ui.form.on('Process Loan Demand', {
 			set_loan_disbursement_filters(frm, {})
 		}
 	},
+	loan_disbursement: function(frm) {
+		frappe.db.get_value("Loan Disbursement", {"name": frm.doc.loan_disbursement}, ["against_loan"])
+			.then(
+				resp => {
+					frm.set_value("loan", resp.message.against_loan)
+					console.log(resp.message)
+				}
+			)
+	}
 });
