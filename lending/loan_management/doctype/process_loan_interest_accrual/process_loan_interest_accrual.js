@@ -6,3 +6,15 @@
 
 // 	}
 // });
+frappe.ui.form.on('Process Loan Interest Accrual', {
+	onload: function (frm) {
+		frm.set_query("loan", function () {
+			return {
+				"filters": {
+					"docstatus": 1,
+					"status": ["not in", ["Closed", "Draft", "Settled", "Written Off"]],
+				}
+			};
+		});
+	},
+});
