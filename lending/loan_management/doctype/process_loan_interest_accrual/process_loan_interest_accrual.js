@@ -7,7 +7,7 @@
 // 	}
 // });
 
-const active_loan_filters = {
+let active_loan_filters = {
 					"docstatus": 1,
 					"status": ["not in", ["Closed", "Draft", "Settled", "Written Off"]],
 				}
@@ -24,9 +24,17 @@ frappe.ui.form.on('Process Loan Interest Accrual', {
 	},
 	loan_product: function (frm) {
 		if (frm.doc.loan_product) {
-			let loan_filters = active_loan_filters
-			loan_filters["loan_product"] = frm.doc.loan_product
-			set_loan_filters(frm, loan_filters)
+			active_loan_filters["loan_product"] = frm.doc.loan_product
+			set_loan_filters(frm, active_loan_filters)
+		}
+		else {
+			set_loan_filters(frm, active_loan_filters)
+		}
+	},
+	company: function (frm) {
+		if (frm.doc.company) {
+			active_loan_filters["company"] = frm.doc.company
+			set_loan_filters(frm, active_loan_filters)
 		}
 		else {
 			set_loan_filters(frm, active_loan_filters)
