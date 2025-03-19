@@ -47,7 +47,7 @@
   },
   {
    "fieldname": "posting_date",
-   "fieldtype": "Date",
+   "fieldtype": "Datetime",
    "in_list_view": 1,
    "label": "Posting Date"
   },
@@ -77,7 +77,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2024-11-28 17:38:17.789181",
+ "modified": "2025-03-19 11:46:39.834713",
  "modified_by": "Administrator",
  "module": "Loan Management",
  "name": "Loan Adjustment",

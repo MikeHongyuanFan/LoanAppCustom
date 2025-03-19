@@ -25,6 +25,42 @@ from lending.utils import daterange
 
 
 class LoanInterestAccrual(AccountsController):
+	# begin: auto-generated types
+	# This code is auto-generated. Do not modify anything in this block.
+
+	from typing import TYPE_CHECKING
+
+	if TYPE_CHECKING:
+		from frappe.types import DF
+
+		accrual_date: DF.Date | None
+		accrual_type: DF.Literal[
+			"Regular", "Repayment", "Disbursement", "Credit Adjustment", "Debit Adjustment", "Refund"
+		]
+		additional_interest_amount: DF.Currency
+		amended_from: DF.Link | None
+		applicant: DF.DynamicLink | None
+		applicant_type: DF.Literal["Employee", "Member", "Customer"]
+		base_amount: DF.Currency
+		company: DF.Link | None
+		cost_center: DF.Link | None
+		interest_amount: DF.Currency
+		interest_type: DF.Literal["Normal Interest", "Penal Interest"]
+		is_npa: DF.Check
+		is_term_loan: DF.Check
+		last_accrual_date: DF.Date | None
+		loan: DF.Link
+		loan_demand: DF.Link | None
+		loan_disbursement: DF.Link | None
+		loan_product: DF.Link | None
+		loan_repayment_schedule: DF.Link | None
+		loan_repayment_schedule_detail: DF.Data | None
+		posting_date: DF.Datetime | None
+		process_loan_interest_accrual: DF.Link | None
+		rate_of_interest: DF.Float
+		start_date: DF.Datetime | None
+	# end: auto-generated types
+
 	def validate(self):
 		if not self.posting_date:
 			self.posting_date = nowdate()
@@ -530,7 +566,7 @@ def calculate_penal_interest_for_loans(
 		additional_interest = 0
 		on_migrate = False
 
-		if getdate(posting_date) >= add_days(demand.demand_date, grace_period_days):
+		if getdate(posting_date) >= add_days(getdate(demand.demand_date), grace_period_days):
 			last_accrual_date = get_last_accrual_date(
 				loan.name,
 				posting_date,
@@ -558,7 +594,7 @@ def calculate_penal_interest_for_loans(
 				from_date = add_days(last_accrual_date, 1)
 
 			from_date_for_entry = from_date
-			for current_date in daterange(from_date, getdate(posting_date)):
+			for current_date in daterange(getdate(from_date), getdate(posting_date)):
 
 				penal_interest_amount = flt(demand.pending_amount) * penal_interest_rate / 36500
 

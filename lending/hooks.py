@@ -32,6 +32,8 @@ voucher_subtypes = "lending.loan_management.doctype.loan.loan.get_voucher_subtyp
 
 before_tests = "lending.tests.test_utils.before_tests"
 
+export_python_type_annotations = True
+
 # Includes in <head>
 # ------------------
 
@@ -176,11 +178,6 @@ scheduler_events = {
 		"lending.loan_management.doctype.process_loan_restructure_limit.process_loan_restructure_limit.calculate_monthly_restructure_limit",
 	],
 }
-
-# Testing
-# -------
-
-before_tests = "lending.utils.before_tests"
 
 bank_reconciliation_doctypes = [
 	"Loan Repayment",
