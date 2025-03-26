@@ -38,6 +38,7 @@ class LoanInterestAccrual(AccountsController):
 			"Regular", "Repayment", "Disbursement", "Credit Adjustment", "Debit Adjustment", "Refund"
 		]
 		additional_interest_amount: DF.Currency
+		additional_interest_suspense_entry: DF.Link | None
 		amended_from: DF.Link | None
 		applicant: DF.DynamicLink | None
 		applicant_type: DF.Literal["Employee", "Member", "Customer"]
@@ -55,10 +56,12 @@ class LoanInterestAccrual(AccountsController):
 		loan_product: DF.Link | None
 		loan_repayment_schedule: DF.Link | None
 		loan_repayment_schedule_detail: DF.Data | None
+		normal_interest_journal_entry: DF.Link | None
 		posting_date: DF.Datetime | None
 		process_loan_interest_accrual: DF.Link | None
 		rate_of_interest: DF.Float
 		start_date: DF.Datetime | None
+		unmark_npa: DF.Check
 	# end: auto-generated types
 
 	def validate(self):
@@ -75,7 +78,7 @@ class LoanInterestAccrual(AccountsController):
 		from lending.loan_management.doctype.loan.loan import make_suspense_journal_entry
 
 		self.make_gl_entries()
-		if self.is_npa:
+		if self.is_npa and not self.unmark_npa:
 			if self.interest_type == "Normal Interest":
 				is_penal = False
 			else:
@@ -84,7 +87,7 @@ class LoanInterestAccrual(AccountsController):
 			loan_status = frappe.db.get_value("Loan", self.loan, "status")
 
 			if loan_status != "Written Off":
-				make_suspense_journal_entry(
+				normal_interest_jv, additional_interest_jv = make_suspense_journal_entry(
 					self.loan,
 					self.company,
 					self.loan_product,
@@ -94,8 +97,18 @@ class LoanInterestAccrual(AccountsController):
 					additional_interest=self.additional_interest_amount,
 				)
 
+			self.db_set("normal_interest_journal_entry", normal_interest_jv)
+			self.db_set("additional_interest_suspense_entry", additional_interest_jv)
+
 	def on_cancel(self):
 		self.make_gl_entries(cancel=1)
+
+		if self.normal_interest_journal_entry:
+			frappe.get_doc("Journal Entry", self.normal_interest_journal_entry).cancel()
+
+		if self.additional_interest_suspense_entry:
+			frappe.get_doc("Journal Entry", self.additional_interest_suspense_entry).cancel()
+
 		self.ignore_linked_doctypes = ["GL Entry", "Payment Ledger Entry"]
 
 	def make_gl_entries(self, cancel=0, adv_adj=0):
