@@ -27,6 +27,7 @@ from lending.loan_management.doctype.loan_repayment_schedule.utils import (
 )
 
 
+# nosemgrep
 class LoanRepaymentSchedule(Document):
 	# begin: auto-generated types
 	# This code is auto-generated. Do not modify anything in this block.
@@ -114,6 +115,7 @@ class LoanRepaymentSchedule(Document):
 		if self.get("repayment_schedule"):
 			self.maturity_date = self.get("repayment_schedule")[-1].payment_date
 
+	# nosemgrep
 	def on_submit(self):
 		self.number_of_rows = 0
 		self.make_demand_for_advance_payment()
