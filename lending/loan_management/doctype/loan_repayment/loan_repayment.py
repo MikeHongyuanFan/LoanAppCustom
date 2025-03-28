@@ -4,7 +4,7 @@
 
 import frappe
 from frappe import _
-from frappe.query_builder.functions import Round, Sum
+from frappe.query_builder.functions import Coalesce, Round, Sum
 from frappe.utils import add_days, cint, flt, get_datetime, getdate
 
 import erpnext
@@ -2406,7 +2406,6 @@ def process_amount_for_loan(
 			loan_disbursement=loan_disbursement,
 		)
 
-	amounts["interest_accrued"] = accrued_interest
 	amounts["total_charges_payable"] = charges
 	amounts["pending_principal_amount"] = flt(pending_principal_amount, precision)
 	amounts["payable_principal_amount"] = flt(payable_principal_amount, precision)
@@ -2471,6 +2470,21 @@ def get_bulk_due_details(loans, posting_date):
 
 	# Get unbooked interest for all loans
 
+	loan_security_deposit_doc = frappe.qb.DocType("Loan Security Deposit")
+	loan_doc = frappe.qb.DocType("Loan")
+	query = (
+		frappe.qb.from_(loan_doc)
+		.select(loan_doc.name, Coalesce(Sum(loan_security_deposit_doc.available_amount), 0))
+		.left_join(loan_security_deposit_doc)
+		.on(loan_security_deposit_doc.loan == loan_doc.name)
+		.where(loan_doc.name.isin(loans))
+		.groupby(loan_doc.name)
+	)
+	available_security_deposit_list = query.run(as_list=1)
+	available_security_deposit_map = {
+		available_security_deposit_item[0]: available_security_deposit_item[1]
+		for available_security_deposit_item in available_security_deposit_list
+	}
 	due_details = []
 	for loan in loan_details:
 		if loan.repayment_schedule_type == "Line of Credit":
@@ -2487,6 +2501,8 @@ def get_bulk_due_details(loans, posting_date):
 					principal_amount,
 					unbooked_interest,
 					amounts,
+					posting_date,
+					available_security_deposit_map,
 				)
 				due_details.append(amounts)
 		else:
@@ -2495,7 +2511,14 @@ def get_bulk_due_details(loans, posting_date):
 			unbooked_interest = unbooked_interest_map.get(loan.name, 0)
 			demands = demand_map.get(loan.name, [])
 			amounts = process_amount_for_bulk_loans(
-				loan, demands, None, principal_amount, unbooked_interest, amounts
+				loan,
+				demands,
+				None,
+				principal_amount,
+				unbooked_interest,
+				amounts,
+				posting_date,
+				available_security_deposit_map,
 			)
 			due_details.append(amounts)
 
@@ -2582,7 +2605,6 @@ def init_amounts():
 		"pending_principal_amount": 0.0,
 		"payable_principal_amount": 0.0,
 		"payable_amount": 0.0,
-		"interest_accrued": 0.0,
 		"unaccrued_interest": 0.0,
 		"unbooked_interest": 0.0,
 		"unbooked_penalty": 0.0,
@@ -2743,26 +2765,6 @@ def get_accrued_interest(
 	)
 
 	return flt(accrued_interest)
-
-
-def get_demanded_interest(loan, posting_date, demand_subtype="Interest", loan_disbursement=None):
-	filters = {
-		"loan": loan,
-		"docstatus": 1,
-		"demand_date": ("<=", posting_date),
-		"demand_subtype": demand_subtype,
-	}
-
-	if loan_disbursement:
-		filters["loan_disbursement"] = loan_disbursement
-
-	demand_interest = frappe.db.get_value(
-		"Loan Demand",
-		filters,
-		"SUM(demand_amount)",
-	)
-
-	return flt(demand_interest)
 
 
 def get_net_paid_amount(loan):
